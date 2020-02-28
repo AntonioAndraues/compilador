@@ -1,13 +1,17 @@
-# Compilador - V0.1.1
+# Compilador - V1.0
+Simple Calculator
 ---
 ## Run command example : 
 
 ```python
-$ python compilador.py '1+1'
+$ python main.py '1+1'
 ```
 ---
 ## Supported ops 
 ```python
 ops=["+","-"]
+# implementing * and / 
 ```
- 
+---
+## Synthetic Diagram  
+![diagrama sintatico](https://i.imgur.com/PyxcTxw.jpg)
