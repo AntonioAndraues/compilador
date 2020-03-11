@@ -1,4 +1,4 @@
-# Compilador - V1.1
+# Compilador - V1.1.0
 Simple Calculator
 ---
 ## Run command example : 
