@@ -1,3 +1,4 @@
+import re
 class Token(object):
     def __init__(self, type_="", value=""):
         self.type_ = type_
@@ -17,6 +18,10 @@ def get_type(str):
         return "div"
     elif(str == "*"):
         return "mult"
+
+class Preprocess():
+    def remove_comments(code):
+        return re.sub(re.compile("\/\*.*?\*\/",re.DOTALL),"",code)
 
 
 class Tokenizer(object):
@@ -56,29 +61,17 @@ class Tokenizer(object):
 
 class Parser(object):
     @staticmethod
-    def parseExpression(tokenizador):
+    def parseTerm(tokenizador):
         resultado = 0
         tokenizador.selectNext()
         if(tokenizador.actual.value.isdigit()):
             resultado = int(tokenizador.actual.value)
             tokenizador.selectNext()
-            while(tokenizador.actual.value == "+" or tokenizador.actual.value == "-" or tokenizador.actual.value == "/" or tokenizador.actual.value == "*"):
-                if(tokenizador.actual.value == "+"):
-                    tokenizador.selectNext()
-                    if(tokenizador.actual.value.isdigit()):
-                        resultado += int(tokenizador.actual.value)
-                    else:
-                        raise TypeError("ERRO:")
-                if(tokenizador.actual.value == "-"):
-                    tokenizador.selectNext()
-                    if(tokenizador.actual.value.isdigit()):
-                        resultado += int(tokenizador.actual.value)*-1
-                    else:
-                        raise TypeError("ERRO:")
+            while(tokenizador.actual.value == "/" or tokenizador.actual.value == "*"):
                 if(tokenizador.actual.value == "/"):
                     tokenizador.selectNext()
                     if(tokenizador.actual.value.isdigit()):
-                        resultado /= int(tokenizador.actual.value)
+                        resultado //= int(tokenizador.actual.value)
                     else:
                         raise TypeError("ERRO:")
                 if(tokenizador.actual.value == "*"):
@@ -88,25 +81,38 @@ class Parser(object):
                     else:
                         raise TypeError("ERRO:")
                 tokenizador.selectNext()
-            if(tokenizador.actual.type_ != "EOF"):
-                raise TypeError("EOF not found")
-            else:
-                print(resultado)
-                return resultado
+            return resultado
         else:
             raise TypeError("ERRO: Innitial not a number")
 
     @staticmethod
+    def parseExpression2(tokenizador):
+        resultado = Parser.parseTerm(tokenizador)
+        while(tokenizador.actual.value == "+" or tokenizador.actual.value == "-"):
+            if(tokenizador.actual.value == "+"):
+                resultado += Parser.parseTerm(tokenizador)
+            if(tokenizador.actual.value == "-"):
+                resultado -= Parser.parseTerm(tokenizador)
+            # resultado = Parser.parseTerm(tokenizador)
+
+        return resultado
+   
+
+    @staticmethod
     def run(code):
         tokenizador = Tokenizer("", 0, 0)
-        tokenizador.origin = code
-        return Parser.parseExpression(tokenizador)
+        tokenizador.origin = Preprocess.remove_comments(code)
+        resultado = Parser.parseExpression2(tokenizador)
+        if(tokenizador.actual.type_ != "EOF"):
+            raise TypeError("EOF not found")
+        return resultado
 
 
 def main():
     import sys
     parser = Parser()
     resultado = parser.run(sys.argv[1])
+    print(resultado)
 
 
 if __name__ == "__main__":
