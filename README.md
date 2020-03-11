@@ -4,14 +4,14 @@ Simple Calculator
 ## Run command example : 
 
 ```python
-$ python main.py '1+1'
+$ python main.py '1 + /* TESTE COMENTARIO */ 1'
 ```
 ---
 ## Supported ops 
 ```python
-ops=["+","-"]
-# implementing * and / 
+ops=["+","-","*","/"]
+# implementing (5+2)*3 
 ```
 ---
 ## Synthetic Diagram  
-![diagrama sintatico](https://i.imgur.com/PyxcTxw.jpg)
+![diagrama sintatico](https://i.imgur.com/Q15Dp1n.jpg)
