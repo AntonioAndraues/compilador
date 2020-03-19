@@ -18,6 +18,10 @@ def get_type(str):
         return "div"
     elif(str == "*"):
         return "mult"
+    elif(str == "("):
+        return "Abre"
+    elif(str == ")"):
+        return "Fecha"
 
 class Preprocess():
     def remove_comments(code):
@@ -61,38 +65,58 @@ class Tokenizer(object):
 
 class Parser(object):
     @staticmethod
-    def parseTerm(tokenizador):
+    def factor(tokenizador):
         resultado = 0
-        tokenizador.selectNext()
         if(tokenizador.actual.value.isdigit()):
-            resultado = int(tokenizador.actual.value)
+            resultado = tokenizador.actual.value
             tokenizador.selectNext()
-            while(tokenizador.actual.value == "/" or tokenizador.actual.value == "*"):
-                if(tokenizador.actual.value == "/"):
-                    tokenizador.selectNext()
-                    if(tokenizador.actual.value.isdigit()):
-                        resultado //= int(tokenizador.actual.value)
-                    else:
-                        raise TypeError("ERRO:")
-                if(tokenizador.actual.value == "*"):
-                    tokenizador.selectNext()
-                    if(tokenizador.actual.value.isdigit()):
-                        resultado *= int(tokenizador.actual.value)
-                    else:
-                        raise TypeError("ERRO:")
-                tokenizador.selectNext()
             return resultado
+        elif(tokenizador.actual.value == "+"):
+            tokenizador.selectNext()
+            resultado =+ int(Parser.factor(tokenizador))
+            return resultado
+        elif(tokenizador.actual.value == "-"):
+            tokenizador.selectNext()
+            resultado =- int(Parser.factor(tokenizador))
+            return resultado
+        elif(tokenizador.actual.value == "("):
+            tokenizador.selectNext()
+            resultado = Parser.parseExpression2(tokenizador)
+            if(tokenizador.actual.value == ")"):
+                tokenizador.selectNext()
+                return resultado
+            else:
+                raise TypeError("ERRO: NO ')'")
         else:
-            raise TypeError("ERRO: Innitial not a number")
+            raise TypeError("ERRO: factor cant consume token")
+        return resultado
+
+    
+
+    @staticmethod
+    def parseTerm(tokenizador):
+        resultado = int(Parser.factor(tokenizador))
+        while(tokenizador.actual.value == "*" or tokenizador.actual.value == "/"):
+            if(tokenizador.actual.value == "/"):
+                tokenizador.selectNext()
+                resultado //= int(Parser.factor(tokenizador))
+            if(tokenizador.actual.value == "*"):
+                tokenizador.selectNext()
+                resultado *= int(Parser.factor(tokenizador))
+
+        return int(resultado)
 
     @staticmethod
     def parseExpression2(tokenizador):
+        # tokenizador.selectNext() 
         resultado = Parser.parseTerm(tokenizador)
         while(tokenizador.actual.value == "+" or tokenizador.actual.value == "-"):
             if(tokenizador.actual.value == "+"):
-                resultado += Parser.parseTerm(tokenizador)
+                tokenizador.selectNext()
+                resultado += int(Parser.parseTerm(tokenizador))
             if(tokenizador.actual.value == "-"):
-                resultado -= Parser.parseTerm(tokenizador)
+                tokenizador.selectNext()
+                resultado -= int(Parser.parseTerm(tokenizador))
             # resultado = Parser.parseTerm(tokenizador)
 
         return resultado
@@ -102,6 +126,7 @@ class Parser(object):
     def run(code):
         tokenizador = Tokenizer("", 0, 0)
         tokenizador.origin = Preprocess.remove_comments(code)
+        tokenizador.selectNext()
         resultado = Parser.parseExpression2(tokenizador)
         if(tokenizador.actual.type_ != "EOF"):
             raise TypeError("EOF not found")

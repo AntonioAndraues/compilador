@@ -1,17 +1,17 @@
-# Compilador - V1.1.0
+# Compilador - V1.2.0
 Simple Calculator
 ---
 ## Run command example : 
 
 ```python
-$ python main.py '1 + /* TESTE COMENTARIO */ 1'
+$ python main.py '1 + /*COMENTARIO */ (5*(1*5))'
 ```
 ---
 ## Supported ops 
 ```python
-ops=["+","-","*","/"]
+tokens=["+","-","*","/","(",")","Number"]
 # implementing (5+2)*3 
 ```
 ---
 ## Synthetic Diagram  
-![diagrama sintatico](https://i.imgur.com/Q15Dp1n.jpg)
+![diagrama sintatico](https://i.imgur.com/YfsjkeP.jpg)
