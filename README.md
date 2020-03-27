@@ -4,7 +4,11 @@ Simple Calculator
 ## Run command example : 
 
 ```python
-$ python main.py '1 + /*COMENTARIO */ (5*(1*5))'
+$ python main.py arquivo.php
+```
+Exemplo de arquivo.php
+```python
+1 + /*COMENTARIO */ (5*(1*5))
 ```
 ---
 ## Supported ops 
