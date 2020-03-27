@@ -1,4 +1,32 @@
 import re
+class Node:
+        def __init__(self):
+            self.value = None
+            self.children = []
+        def evaluate(self):
+            raise NotImplementedError    
+class BinOP(Node):
+    def evaluate(self):
+        if (self.value=="+"):
+            return int(self.children[0].evaluate()) + int(self.children[1].evaluate())
+        if (self.value=="-"):
+            return int(self.children[0].evaluate()) - int(self.children[1].evaluate())
+        if (self.value=="*"):
+            return int(self.children[0].evaluate()) * int(self.children[1].evaluate())
+        if (self.value=="/"):
+            return int(self.children[0].evaluate()) // int(self.children[1].evaluate())
+class UnOP(Node):
+    def evaluate(self):
+        if (self.value=="+"):
+            return self.children[0].evaluate()
+        if (self.value=="-"):
+            return -int(self.children[0].evaluate())
+class IntVAL(Node):
+    def evaluate(self):
+        return self.value
+class NoOP(Node):
+    def evaluate(self):
+            return super().evaluate()
 class Token(object):
     def __init__(self, type_="", value=""):
         self.type_ = type_
@@ -22,6 +50,8 @@ def get_type(str):
         return "Abre"
     elif(str == ")"):
         return "Fecha"
+    else:
+        return "Não identificado"
 
 class Preprocess():
     def remove_comments(code):
@@ -68,17 +98,16 @@ class Parser(object):
     def factor(tokenizador):
         resultado = 0
         if(tokenizador.actual.value.isdigit()):
-            resultado = tokenizador.actual.value
+            node = IntVAL()
+            node.value=tokenizador.actual.value
             tokenizador.selectNext()
-            return resultado
-        elif(tokenizador.actual.value == "+"):
+            return node
+        if(tokenizador.actual.value == "+" or tokenizador.actual.value == "-"):
+            node = UnOP()
+            node.value = tokenizador.actual.value
             tokenizador.selectNext()
-            resultado =+ int(Parser.factor(tokenizador))
-            return resultado
-        elif(tokenizador.actual.value == "-"):
-            tokenizador.selectNext()
-            resultado =- int(Parser.factor(tokenizador))
-            return resultado
+            node.children.append(Parser.factor(tokenizador))
+            return node
         elif(tokenizador.actual.value == "("):
             tokenizador.selectNext()
             resultado = Parser.parseExpression2(tokenizador)
@@ -95,31 +124,29 @@ class Parser(object):
 
     @staticmethod
     def parseTerm(tokenizador):
-        resultado = int(Parser.factor(tokenizador))
+        node2 = Parser.factor(tokenizador)
         while(tokenizador.actual.value == "*" or tokenizador.actual.value == "/"):
-            if(tokenizador.actual.value == "/"):
-                tokenizador.selectNext()
-                resultado //= int(Parser.factor(tokenizador))
-            if(tokenizador.actual.value == "*"):
-                tokenizador.selectNext()
-                resultado *= int(Parser.factor(tokenizador))
-
-        return int(resultado)
+            node = BinOP()
+            node.value=tokenizador.actual.value
+            tokenizador.selectNext()
+            node.children.append(node2)
+            node2=node
+            node.children.append((Parser.factor(tokenizador)))
+        return node2
 
     @staticmethod
     def parseExpression2(tokenizador):
         # tokenizador.selectNext() 
-        resultado = Parser.parseTerm(tokenizador)
+        node2 = Parser.parseTerm(tokenizador)
         while(tokenizador.actual.value == "+" or tokenizador.actual.value == "-"):
-            if(tokenizador.actual.value == "+"):
-                tokenizador.selectNext()
-                resultado += int(Parser.parseTerm(tokenizador))
-            if(tokenizador.actual.value == "-"):
-                tokenizador.selectNext()
-                resultado -= int(Parser.parseTerm(tokenizador))
+            node = BinOP()
+            node.value=tokenizador.actual.value
+            node.children.append(node2)
+            node2=node
+            tokenizador.selectNext()
+            node.children.append(Parser.parseTerm(tokenizador))
             # resultado = Parser.parseTerm(tokenizador)
-
-        return resultado
+        return node2
    
 
     @staticmethod
@@ -130,14 +157,21 @@ class Parser(object):
         resultado = Parser.parseExpression2(tokenizador)
         if(tokenizador.actual.type_ != "EOF"):
             raise TypeError("EOF not found")
-        return resultado
-
+        return resultado.evaluate()
 
 def main():
     import sys
     parser = Parser()
-    resultado = parser.run(sys.argv[1])
-    print(resultado)
+    f = open(sys.argv[1], "r")
+
+    linhas = f.readlines()
+    for linha in linhas:
+        if("\n" in linha):
+            linha=linha[:-1]
+        resultado = parser.run(linha)
+        print(resultado)
+
+    f.close() 
 
 
 if __name__ == "__main__":
