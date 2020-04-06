@@ -1,5 +1,5 @@
-# Compilador - V2.0.0
-Simple Calculator
+# Compilador - v2.1
+Simple Calculator - PHP
 ---
 ## Run command example : 
 
@@ -8,14 +8,17 @@ $ python main.py arquivo.php
 ```
 Exemplo de arquivo.php
 ```python
-1 + /*COMENTARIO */ (5*(1*5))
+{
+   $a1=12;
+   $a2=24;
+   echo 1+2*($a2/$a1);
+}
 ```
 ---
 ## Supported ops 
 ```python
 tokens=["+","-","*","/","(",")","Number"]
-# implementing (5+2)*3 
 ```
 ---
 ## Synthetic Diagram  
-![diagrama sintatico](https://i.imgur.com/YfsjkeP.jpg)
+![diagrama sintatico](https://i.imgur.com/NmXD6qk.jpg)
