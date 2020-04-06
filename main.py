@@ -278,11 +278,9 @@ class Parser(object):
 def main():
     import sys
     parser = Parser()
-    f = open("teste.php", "r")
+    f = open(sys.argv[1], "r")
     entrada=f.read()
-    print(entrada)
     resultado = parser.run(entrada)
-    # print(resultado)
     f.close() 
 
 
