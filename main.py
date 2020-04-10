@@ -93,6 +93,7 @@ class Tokenizer(object):
         self.origin = origin
         self.position = 0
         self.actual = Token()
+        self.selectNext()
 
     def selectNext(self):
         self.actual.value = ""
@@ -116,7 +117,7 @@ class Tokenizer(object):
                 return
         if(self.origin[self.position].isalpha()):
             palavras_reservadas = ["echo"]
-            palavra=self.origin[self.position]
+            palavra=self.origin[self.position].lower()
             while(self.origin[self.position+1].isalpha()):
                 self.position+=1
                 palavra+=self.origin[self.position].lower()
@@ -134,7 +135,7 @@ class Tokenizer(object):
             if(self.origin[self.position].isalpha()):
                 nome_var += self.origin[self.position]
                 self.position += 1
-                while(self.origin[self.position].isalpha() or self.origin[self.position].isdigit() or self.origin[self.position] == "-"):
+                while(self.origin[self.position].isalpha() or self.origin[self.position].isdigit() or self.origin[self.position] == "_"):
                     nome_var += self.origin[self.position]
                     self.position += 1
                 self.actual.value=nome_var
@@ -166,11 +167,12 @@ class Parser(object):
             tokenizador.selectNext()
             node = Commands()
             node.children.append(Parser.command(tokenizador))
-            while(tokenizador.actual.value != "}"):
+            while (tokenizador.actual.value != "}"):
                 node.children.append(Parser.command(tokenizador))
-                
             tokenizador.selectNext()
             return node
+        else:
+            raise TypeError("ERRO : CODIGO INVALIDO")
 
     @staticmethod
     def command(tokenizador):
@@ -195,7 +197,8 @@ class Parser(object):
                 tokenizador.selectNext()
                 return node
         elif(tokenizador.actual.value == "{"):
-            Parser.block(tokenizador)
+            commands = Parser.block(tokenizador)
+            return commands
         elif(tokenizador.actual.value == ";"):
             return
         else:
@@ -272,8 +275,7 @@ class Parser(object):
         resultado = Parser.block(tokenizador)
         if(tokenizador.actual.type_ != "EOF"):
             raise TypeError("EOF not found")
-        simpletable = Variaveis()
-        return resultado.evaluate(simbol_table=simpletable)
+        return resultado
 
 def main():
     import sys
@@ -281,7 +283,9 @@ def main():
     f = open(sys.argv[1], "r")
     entrada=f.read()
     resultado = parser.run(entrada)
+    simpletable = Variaveis()
     f.close() 
+    return resultado.evaluate(simbol_table=simpletable)
 
 
 if __name__ == "__main__":
