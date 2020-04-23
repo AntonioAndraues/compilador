@@ -24,12 +24,27 @@ class BinOP(Node):
             return int(self.children[0].evaluate(simbol_table)) * int(self.children[1].evaluate(simbol_table))
         if (self.value=="/"):
             return int(self.children[0].evaluate(simbol_table)) // int(self.children[1].evaluate(simbol_table))
+        if (self.value=="and"):
+            return (self.children[0].evaluate(simbol_table) and self.children[1].evaluate(simbol_table))
+        if (self.value=="or"):
+            return (self.children[0].evaluate(simbol_table) or self.children[1].evaluate(simbol_table))
+            
+class RelacionalOP(Node):
+    def evaluate(self,simbol_table):
+        if (self.value=="=="):
+            return (int(self.children[0].evaluate(simbol_table)) == int(self.children[1].evaluate(simbol_table)))
+        if (self.value==">"):
+            return (int(self.children[0].evaluate(simbol_table)) > int(self.children[1].evaluate(simbol_table)))
+        if (self.value=="<"):
+            return (int(self.children[0].evaluate(simbol_table)) < int(self.children[1].evaluate(simbol_table)))
 class UnOP(Node):
     def evaluate(self,simbol_table):
         if (self.value=="+"):
             return self.children[0].evaluate(simbol_table)
         if (self.value=="-"):
             return -int(self.children[0].evaluate(simbol_table))
+        if (self.value=="!"):
+            return not (self.children[0].evaluate(simbol_table))
 class IntVAL(Node):
     def evaluate(self,simbol_table):
         return self.value
@@ -45,6 +60,21 @@ class Assign(Node):
 class Echo(Node):
     def evaluate(self,simbol_table):
         print(self.children[0].evaluate(simbol_table))
+class While(Node):
+    def evaluate(self,simbol_table):
+        while (self.children[0].evaluate(simbol_table)):
+            self.children[1].evaluate(simbol_table)
+class If(Node):
+    def evaluate(self,simbol_table):
+        if(self.children[0].evaluate(simbol_table)):
+            return self.children[1].evaluate(simbol_table)
+        if(len(self.children)==3):  
+            return self.children[2].evaluate(simbol_table)
+        return
+
+class ReadLine(Node):
+    def evaluate(self,simbol_table):
+        return input()
 class Commands(Node):
     def evaluate(self, simbol_table):
         for i in self.children:
@@ -115,8 +145,20 @@ class Tokenizer(object):
                 return
             if(get_type(self.origin[self.position]) != 'int'):
                 return
+        if(self.origin[self.position] == "!" or self.origin[self.position] == "<" or self.origin[self.position] == ">" ):
+            self.actual.value = self.origin[self.position]
+            self.type_= self.origin[self.position]
+            self.position+=1
+            return
+        if(self.origin[self.position] == "="):
+            if(self.origin[self.position+1] == "="):
+                self.actual.value = "=="
+                self.type_= "Relational =="
+                self.position+=2
+                return
+        
         if(self.origin[self.position].isalpha()):
-            palavras_reservadas = ["echo"]
+            palavras_reservadas = ["echo","if","else","while","readline","or","and"]
             palavra=self.origin[self.position].lower()
             while(self.origin[self.position+1].isalpha()):
                 self.position+=1
@@ -185,17 +227,43 @@ class Parser(object):
                 node.children.append(filho_esquerda)
                 node.value=tokenizador.actual.value
                 tokenizador.selectNext()
-                node.children.append(Parser.parseExpression2(tokenizador))
+                node.children.append(Parser.relexpr(tokenizador))
                 if(tokenizador.actual.value == ";"):
                     tokenizador.selectNext()
                     return node
         elif(tokenizador.actual.value == "echo"):
             node = Echo()
             tokenizador.selectNext()
-            node.children.append(Parser.parseExpression2(tokenizador))
+            node.children.append(Parser.relexpr(tokenizador))
             if(tokenizador.actual.value == ";"):
                 tokenizador.selectNext()
                 return node
+        elif(tokenizador.actual.value == "while"):
+            node = While()
+            node.value=tokenizador.actual.value
+            tokenizador.selectNext()
+            if(tokenizador.actual.value == "("):
+                node.children.append(Parser.relexpr(tokenizador))
+                node.children.append(Parser.command(tokenizador))
+                return node
+            return TypeError("ERRO: NA formatação do While")
+        elif(tokenizador.actual.value == "if"):
+            node = If()
+            node.value=tokenizador.actual.value
+            tokenizador.selectNext()
+            if(tokenizador.actual.value == "("):
+                node.children.append(Parser.relexpr(tokenizador))
+                node.children.append(Parser.command(tokenizador))
+                # tokenizador.selectNext()
+                if(tokenizador.actual.value == "else"):
+                    tokenizador.selectNext()
+                    node.children.append(Parser.command(tokenizador))
+                    return node
+                else:
+                    return node
+            return TypeError("ERRO: NA formatação do If")
+            
+            
         elif(tokenizador.actual.value == "{"):
             commands = Parser.block(tokenizador)
             return commands
@@ -204,7 +272,17 @@ class Parser(object):
         else:
             raise TypeError("ERRO: COMMAND NOT FOUND")
         
-            
+    @staticmethod
+    def relexpr(tokenizador):
+        node2 = Parser.parseExpression2(tokenizador)
+        while(tokenizador.actual.value == "==" or tokenizador.actual.value == ">" or tokenizador.actual.value == "<"):
+            node = RelacionalOP()
+            node.value=tokenizador.actual.value
+            node.children.append(node2)
+            node2=node
+            tokenizador.selectNext()
+            node.children.append(Parser.parseExpression2(tokenizador))
+        return node2
     @staticmethod
     def factor(tokenizador):
         resultado = 0
@@ -218,15 +296,25 @@ class Parser(object):
             node.value=tokenizador.actual.value
             tokenizador.selectNext()
             return node
-        if(tokenizador.actual.value == "+" or tokenizador.actual.value == "-"):
+        if(tokenizador.actual.value == "+" or tokenizador.actual.value == "-" or tokenizador.actual.value == "!" ):
             node = UnOP()
             node.value = tokenizador.actual.value
             tokenizador.selectNext()
             node.children.append(Parser.factor(tokenizador))
             return node
+        if(tokenizador.actual.value == "readline"):
+            node = ReadLine()
+            node.value = tokenizador.actual.value
+            tokenizador.selectNext()
+            if(tokenizador.actual.value == "("):
+                tokenizador.selectNext()
+                if(tokenizador.actual.value == ")"):
+                    tokenizador.selectNext()
+                    return node
+            return TypeError("ERRO: Formatação do readline")
         elif(tokenizador.actual.value == "("):
             tokenizador.selectNext()
-            resultado = Parser.parseExpression2(tokenizador)
+            resultado = Parser.relexpr(tokenizador)
             if(tokenizador.actual.value == ")"):
                 tokenizador.selectNext()
                 return resultado
@@ -242,7 +330,7 @@ class Parser(object):
     @staticmethod
     def parseTerm(tokenizador):
         node2 = Parser.factor(tokenizador)
-        while(tokenizador.actual.value == "*" or tokenizador.actual.value == "/"):
+        while(tokenizador.actual.value == "*" or tokenizador.actual.value == "/" or tokenizador.actual.value == "and"):
             node = BinOP()
             node.value=tokenizador.actual.value
             tokenizador.selectNext()
@@ -255,7 +343,7 @@ class Parser(object):
     def parseExpression2(tokenizador):
         # tokenizador.selectNext() 
         node2 = Parser.parseTerm(tokenizador)
-        while(tokenizador.actual.value == "+" or tokenizador.actual.value == "-"):
+        while(tokenizador.actual.value == "+" or tokenizador.actual.value == "-" or tokenizador.actual.value == "or"):
             node = BinOP()
             node.value=tokenizador.actual.value
             node.children.append(node2)
