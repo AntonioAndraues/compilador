@@ -1,4 +1,4 @@
-# Compilador - v2.3.1
+# Compilador - v2.3.2
 Simple Calculator - PHP
 ---
 ## Run command example : 
@@ -8,7 +8,7 @@ $ python main.py arquivo.php
 ```
 Exemplo de arquivo.php
 ```python
-{
+<?php
     $interable=0;
     $max=2;
     $a = "";
@@ -31,7 +31,7 @@ Exemplo de arquivo.php
         }
         echo $a;
     }
-}
+?>
 ```
 ---
 ## Supported ops 
