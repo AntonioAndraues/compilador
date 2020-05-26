@@ -263,15 +263,15 @@ class Tokenizer(object):
 class Parser(object):
     @staticmethod
     def program(tokenizador):
+        result = Commands()
         if(tokenizador.actual.value == "<?php"):
             tokenizador.selectNext()
-            node = Commands()
-            node.children.append(Parser.command(tokenizador))
-            if(tokenizador.actual.value == "?>"):
-                tokenizador.selectNext()
-                return node
-            else:
-                raise TypeError("ERRO: Não foi possivel encontrar a chave de fechamento '?>' ")
+            while tokenizador.actual.value != "?>":
+                result.children.append(Parser.command(tokenizador)) 
+            tokenizador.selectNext()
+        else:
+            raise TypeError("ERRO: Não foi possivel encontrar a chave <?php?>")
+        return result
     @staticmethod
     def block(tokenizador):
         if(tokenizador.actual.value == "{"):
