@@ -1,6 +1,7 @@
-# Compilador - v2.3.2
+# Compilador - v2.4.1
 Simple Calculator - PHP
 ---
+Falta atualizar o ds e concertar o return
 ## Run command example : 
 
 ```python
@@ -9,34 +10,21 @@ $ python main.py arquivo.php
 Exemplo de arquivo.php
 ```python
 <?php
-    $interable=0;
-    $max=2;
-    $a = "";
-    while($interable<$max){
-        $a = readline();
-        $b = readline();
-        if(($a > 9) and !($b == 5)){
-            echo 1;
-        }else{
-            echo 0;
-        }
-        if(($a==10) or ($a==11)){
-                echo $a;
-            }
-        $interable = $interable + 1;
-        $i = 0;
-        while (3 > $i) {
-            $a = $a."a";
-            $i = $i + 1;
-        }
-        echo $a;
+function soma($x,$y){
+    function echoes($b){
+        echo $b;
     }
+    $a=$x+$y;
+    echoes($a);
+}
+$a=3;
+soma($a,4);
 ?>
 ```
 ---
 ## Supported ops 
 ```python
-tokens=["+","-","*","/","(",")","Number","if","while","else","==",">","<","!","true","false","string"]
+tokens=["+","-","*","/","(",")","Number","if","while","else","==",">","<","!","true","false","string","functions"]
 ```
 ---
 ## Synthetic Diagram  

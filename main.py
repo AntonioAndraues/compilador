@@ -1,5 +1,6 @@
 import re
 class Variaveis:
+    funcs={}
     def __init__(self):
         self.dict = {}
 
@@ -8,6 +9,17 @@ class Variaveis:
 
     def setter(self,name,value):
         self.dict[name] = value
+    @staticmethod
+    def f_getter(name):
+        if not (name in Variaveis.funcs):
+            raise TypeError("ERRO: Funcão chamada inesistente")
+        return Variaveis.funcs[name]
+    @staticmethod
+    def f_setter(node):
+        if(node.value in Variaveis.funcs):
+            raise TypeError(f'ERRO: Função {node.value} já foi declarada')
+        Variaveis.funcs[node.value] = node.children
+
 
 class Node:
         def __init__(self):
@@ -107,6 +119,26 @@ class StringVal(Node):
     def evaluate(self, simbol_table):
         return (self.value)
 
+class FuncDec(Node):
+    def evaluate(self, simbol_table):
+        Variaveis.f_setter(self)
+
+class FuncCall(Node):
+    def evaluate(self, simbol_table):
+        func = Variaveis.f_getter(self.value) 
+        args = func[:-1]
+        command = func[-1]
+        local_vars = Variaveis()
+        if(len(args)!=len(self.children)):
+            raise TypeError("ERRO: Numero de argumentos invalido")
+        for i in range(len(args)):
+            local_vars.setter(args[i].value,self.children[i].evaluate(simbol_table))
+        command.evaluate(local_vars)
+        
+class Return(Node):
+    def evaluate(self, simbol_table):
+        return self.children.evaluate(simbol_table)
+
 class Token(object):
     def __init__(self, type_="", value=""):
         self.type_ = type_
@@ -164,6 +196,11 @@ class Tokenizer(object):
                 self.actual.value = ""
                 self.actual.type_ = "EOF"
                 return
+        if(self.origin[self.position] == ","):
+            self.actual.value=","
+            self.type_="virgula"
+            self.position+=1
+            return 
         while(self.origin[self.position].isdigit()):
             self.actual.value += self.origin[self.position]
             self.actual.type_ = "int"
@@ -213,16 +250,19 @@ class Tokenizer(object):
                 self.position+=1
                 return
             else:
-                self.position=position
+                self.actual.value=palavra
+                self.actual.type_="nome_funcao"
+                self.position+=1
+                return
         if(self.origin[self.position].isalpha()):
-            palavras_reservadas = ["echo","if","else","while","readline","or","and"]
+            palavras_reservadas = ["echo","if","else","while","readline","or","and","function", "return"]
             palavra=self.origin[self.position].lower()
             while(self.origin[self.position+1].isalpha()):
                 self.position+=1
                 palavra+=self.origin[self.position].lower()
             if(palavra in palavras_reservadas):
                 self.actual.value=palavra
-                self.type_=palavra
+                self.actual.type_=palavra
                 self.position+=1
                 return
             else:
@@ -338,6 +378,50 @@ class Parser(object):
             return commands
         elif(tokenizador.actual.value == ";"):
             return
+        elif(tokenizador.actual.value == "function"):
+            node = FuncDec()
+            tokenizador.selectNext()
+            if(tokenizador.actual.type_ == "nome_funcao"):
+                node.value=tokenizador.actual.value
+                tokenizador.selectNext()
+                if(tokenizador.actual.value == "("):
+                    tokenizador.selectNext()
+                    while(tokenizador.actual.value!=")"):
+                        if(tokenizador.actual.type_ == "identifier" and tokenizador.actual.value!=","):
+                            node.children.append(Parser.relexpr(tokenizador))
+                        if(tokenizador.actual.value!=")"):
+                            tokenizador.selectNext()
+                    tokenizador.selectNext()
+                    node.children.append(Parser.block(tokenizador))
+                    return node
+        elif(tokenizador.actual.value == "return"):
+            node = Return()
+            tokenizador.selectNext()
+            node.children.append(Parser.relexpr(tokenizador))
+            if(tokenizador.actual.value !=";"):
+                raise TypeError("ERRO: falta de ;")
+            tokenizador.selectNext()
+            node.children.append(node.children.evalueate())
+            return node
+        elif(tokenizador.actual.type_ == "nome_funcao"):
+            node = FuncCall()
+            node.value=tokenizador.actual.value
+            tokenizador.selectNext()
+            if(tokenizador.actual.value == "("):
+                tokenizador.selectNext()
+                while(tokenizador.actual.value!=")"):
+                    if(tokenizador.actual.value==","):
+                        tokenizador.selectNext()
+                    if(tokenizador.actual.value!=","):
+                        node.children.append(Parser.relexpr(tokenizador))
+                        # if(tokenizador.actual.value!="," and tokenizador.actual.value!=")"):
+                        #     raise TypeError("ERRO: na chamada da funcao")
+                tokenizador.selectNext()
+                if(tokenizador.actual.value == ";"):
+                    tokenizador.selectNext()
+                    return node
+                else:
+                    raise TypeError("ERRO: ; não encontrado")
         else:
             raise TypeError(f"ERRO: COMMAND NOT FOUND {tokenizador.actual.value} ")
         
@@ -400,6 +484,25 @@ class Parser(object):
                 return resultado
             else:
                 raise TypeError("ERRO: NO ')'")
+        elif(tokenizador.actual.type_ == "nome_funcao"):
+            node = FuncCall()
+            node.value=tokenizador.actual.value
+            tokenizador.selectNext()
+            if(tokenizador.actual.value == "("):
+                tokenizador.selectNext()
+                while(tokenizador.actual.value!=")"):
+                    if(tokenizador.actual.value==","):
+                        tokenizador.selectNext()
+                    if(tokenizador.actual.value!=","):
+                        node.children.append(Parser.relexpr(tokenizador))
+                        # if(tokenizador.actual.value!="," and tokenizador.actual.value!=")"):
+                        #     raise TypeError("ERRO: na chamada da funcao")
+                tokenizador.selectNext()
+                if(tokenizador.actual.value == ";"):
+                    tokenizador.selectNext()
+                    return node
+                else:
+                    raise TypeError("ERRO: ; não encontrado")
         # elif(tokenizador.actual.value == "$"):
         else:
             raise TypeError("ERRO: factor cant consume token")
