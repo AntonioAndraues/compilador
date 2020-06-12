@@ -2,7 +2,7 @@ import re
 class Variaveis:
     funcs={}
     def __init__(self):
-        self.dict = {}
+        self.dict = {"RETURN":None}
 
     def getter(self,value):
         return self.dict[value]
@@ -134,10 +134,12 @@ class FuncCall(Node):
         for i in range(len(args)):
             local_vars.setter(args[i].value,self.children[i].evaluate(simbol_table))
         command.evaluate(local_vars)
+        if(local_vars.getter("RETURN")!=None):
+            return local_vars.getter("RETURN")
         
 class Return(Node):
     def evaluate(self, simbol_table):
-        return self.children.evaluate(simbol_table)
+        simbol_table.setter(name="RETURN",value=self.children[0].evaluate(simbol_table))
 
 class Token(object):
     def __init__(self, type_="", value=""):
@@ -401,7 +403,8 @@ class Parser(object):
             if(tokenizador.actual.value !=";"):
                 raise TypeError("ERRO: falta de ;")
             tokenizador.selectNext()
-            node.children.append(node.children.evalueate())
+            while tokenizador.actual.value!="}":
+                tokenizador.selectNext()
             return node
         elif(tokenizador.actual.type_ == "nome_funcao"):
             node = FuncCall()
@@ -498,11 +501,7 @@ class Parser(object):
                         # if(tokenizador.actual.value!="," and tokenizador.actual.value!=")"):
                         #     raise TypeError("ERRO: na chamada da funcao")
                 tokenizador.selectNext()
-                if(tokenizador.actual.value == ";"):
-                    tokenizador.selectNext()
-                    return node
-                else:
-                    raise TypeError("ERRO: ; não encontrado")
+                return node
         # elif(tokenizador.actual.value == "$"):
         else:
             raise TypeError("ERRO: factor cant consume token")
