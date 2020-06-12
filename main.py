@@ -112,6 +112,9 @@ class Commands(Node):
     def evaluate(self, simbol_table):
         for i in self.children:
             i.evaluate(simbol_table)
+            if(simbol_table.getter("RETURN")!=None):
+                return
+        
 class BoolVal(Node):
     def evaluate(self, simbol_table):
         return self.value
